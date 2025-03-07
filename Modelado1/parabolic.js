@@ -96,7 +96,7 @@ function startSimulation() {
   // Fuerza Inicial
   ball.applyForce(forceX, forceY);
 
-  // Remove applied initial force after 1.5 seconds
+ 
   setTimeout(() => {
     ball.applyForce(-forceX, -forceY);
   }, 1500);
