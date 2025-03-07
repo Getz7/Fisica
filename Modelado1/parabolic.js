@@ -4,9 +4,10 @@ let traces = [];
 let count = 0;
 let g = 9.8;
 let simulationRunning = false;
-let time=0;
+let time = 0;
+
 class Ball {
-  constructor(x, y, mass, radius) {
+  constructor(x, y, mass, radius, forceMagnitude = 0, angle = 0) {
     this.mass = mass;
     this.radius = radius;
     this.x = x;
@@ -14,9 +15,22 @@ class Ball {
 
     this.vx = 0;
     this.vy = 0;
- 
+
     this.ax = 0;
     this.ay = 0;
+
+    // Si hay fuerza inicial, la aplicamos automáticamente
+    if (forceMagnitude > 0) {
+      angleMode(DEGREES);
+      const fx = forceMagnitude * cos(angle);
+      const fy = -forceMagnitude * sin(angle);
+      this.applyForce(fx, fy);
+
+      // Si quieres quitar la fuerza luego de 1 segundo como antes
+      setTimeout(() => {
+        this.applyForce(-fx, -fy);
+      }, 1000);
+    }
   }
 
   applyForce(fx, fy) {
@@ -27,27 +41,26 @@ class Ball {
   update() {
     const dt = 1 / fps;
 
-    // Update velocidades
     this.vx += this.ax * dt;
     this.vy += this.ay * dt;
 
-    // Update posiciones
     this.x += this.vx * dt;
     this.y += this.vy * dt;
   }
+
   checkCollision() {
     if (this.y + this.radius >= height) {
-      this.y = height - this.radius; 
+      this.y = height - this.radius;
       this.vx = 0;
       this.vy = 0;
-      return true; // Colision detectada
+      return true;
     }
     return false;
   }
+
   draw() {
     ellipse(this.x, this.y, this.radius * 2);
 
-    //Lineas de guia
     push();
     stroke(0, 0, 255);
     strokeWeight(2);
@@ -64,22 +77,24 @@ class Ball {
 
 function setup() {
   frameRate(fps);
-  let canvas = createCanvas(2000, 810);
+  let canvas = createCanvas(1760, 700);
   canvas.id('simulationCanvas');
   document.getElementById('startButton').addEventListener('click', startSimulation);
 }
 
 function startSimulation() {
-  time =0;
+  time = 0;
   traces = [];
   count = 0;
   simulationRunning = true;
   const errorDiv = document.getElementById('errorMessage');
   errorDiv.textContent = "";
+
   const mass = parseFloat(document.getElementById('massInput').value);
-  const forceX = parseFloat(document.getElementById('forceXInput').value);
-  const forceY = parseFloat(document.getElementById('forceYInput').value);
+  const forceMagnitude = parseFloat(document.getElementById('forceMagnitudeInput').value);
+  const angle = parseFloat(document.getElementById('angleInput').value);
   g = parseFloat(document.getElementById('gravityInput').value);
+
   if (isNaN(mass) || mass <= 0) {
     errorDiv.textContent = "Error: La masa debe ser un número mayor a 0.";
     return;
@@ -88,24 +103,27 @@ function startSimulation() {
     errorDiv.textContent = "Error: La gravedad debe ser un número mayor a 0.";
     return;
   }
-  ball = new Ball(20, height - 20, mass, 20);
+  if (isNaN(forceMagnitude) || forceMagnitude <= 0) {
+    errorDiv.textContent = "Error: La magnitud de la fuerza debe ser un número mayor a 0.";
+    return;
+  }
+  if (isNaN(angle)) {
+    errorDiv.textContent = "Error: El ángulo debe ser un número.";
+    return;
+  }
 
-  // Fuerza de gravedad
+  angleMode(DEGREES);
+
+  // Creamos la bola con fuerza inicial y ángulo
+  ball = new Ball(20, height - 20, mass, 20, forceMagnitude, angle);
+
   ball.applyForce(0, ball.mass * g);
-
-  // Fuerza Inicial
-  ball.applyForce(forceX, forceY);
-
- 
-  setTimeout(() => {
-    ball.applyForce(-forceX, -forceY);
-  }, 1500);
 }
 
 function draw() {
   background('#AEDFF7');
-  if(simulationRunning && ball){
-    time +=1/fps;
+  if (simulationRunning && ball) {
+    time += 1 / fps;
   }
   if (!simulationRunning) {
     fill('rgb(0, 0, 0)');
@@ -141,5 +159,4 @@ function draw() {
       traces.push(new Ball(ball.x, ball.y, ball.mass, ball.radius));
     }
   }
-  
 }
